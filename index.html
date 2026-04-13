@@ -1,0 +1,409 @@
+```html
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coach PRO - מירב אמבר</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #f1f5f9; /* slate-100 */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Animations */
+        .fade-in-zoom {
+            animation: fadeInZoom 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeInZoom {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Hide scrollbar for tabs */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-root"></div>
+
+    <script>
+        // --- אזור הנתונים ---
+        const clientProfile = {
+            name: "מירב אמבר",
+            goal: "אימון אישי - שיפור כוח וטכניקה",
+            startDate: "אימון ראשון",
+            status: "פעיל"
+        };
+
+        const videosData = [];
+
+        // נתוני אימון ראשון של מירב
+        const progressData = {
+            weight: [
+                { date: 'נוכחי', weight: 0 }, // אם תרצה להוסיף שקילה אפשר כאן
+            ],
+            strength: [
+                { exercise: 'האק סקוואט', prev: 40, current: 40, reps: '5', sets: '-' },
+                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 37.5, reps: '8', sets: '-' },
+                { exercise: 'מתח גומיה אדומה', prev: 0, current: 0, reps: '4', sets: '-' },
+                { exercise: 'שכיבות סמיכה (סמית)', prev: 0, current: 0, reps: '6', sets: '4' },
+                { exercise: 'דדליפט רומני', prev: 35, current: 35, reps: '8', sets: '-' },
+                { exercise: 'בולגרי יד אחת', prev: 12.5, current: 12.5, reps: '10', sets: '-' },
+                { exercise: 'לחיצת כתפיים מוט', prev: 20, current: 20, reps: '6', sets: '-' },
+                { exercise: 'סקול קראשר', prev: 15, current: 15, reps: '8', sets: '-' },
+                { exercise: 'כפיפת מרפקים W', prev: 15, current: 15, reps: '8', sets: '-' }
+            ]
+        };
+
+        // --- מצב האפליקציה (State) ---
+        let activeTab = 'progress'; // טאב ברירת המחדל שונה להתקדמות
+        let chartsInstance = [];
+        let selectedProgressExercise = progressData.strength[0]?.exercise || '';
+
+        // --- פונקציות עזר ורינדור ---
+
+        function setTab(tabName) {
+            activeTab = tabName;
+            render();
+        }
+
+        function updateExerciseDetails(exName) {
+            selectedProgressExercise = exName;
+            const exProgress = progressData.strength.find(d => d.exercise === exName);
+            if (!exProgress) return;
+            
+            const container = document.getElementById('exerciseDetailsContent');
+            if(container) {
+                // בדיקה האם זה משקל גוף/גומיה (משקל 0) או משקל אמיתי בק"ג
+                const weightDisplay = exProgress.current > 0 ? exProgress.current + ' ק"ג' : 'משקל גוף / גומייה';
+
+                container.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3 mb-3 mt-2">
+                        <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                            <span class="block text-xs text-slate-500 mb-1">משקל התחלה</span>
+                            <span class="text-lg font-bold text-slate-300">${weightDisplay}</span>
+                        </div>
+                        <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                            <span class="block text-xs text-blue-400 mb-1">שיא משקל נוכחי</span>
+                            <span class="text-lg font-bold text-blue-400">${weightDisplay}</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 mb-3">
+                        <span class="block text-xs text-slate-500 mb-1">ביצוע באימון אחרון</span>
+                        <span class="text-md font-medium text-slate-200 flex items-center gap-2">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+                            ${exProgress.sets !== '-' ? exProgress.sets + ' סטים | ' : ''} ${exProgress.reps} חזרות
+                        </span>
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                        <span class="block text-xs text-slate-500 mb-2">מעקב לאימון הבא (יעד)</span>
+                        <div class="text-sm text-slate-400 italic font-mono bg-slate-950 p-2 rounded border border-slate-800">
+                            סט 1: ${weightDisplay} × __ חזרות <br>
+                            סט 2: ${weightDisplay} × __ חזרות <br>
+                            סט 3: ${weightDisplay} × __ חזרות
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons(); // רענון אייקונים
+            }
+        }
+
+        function renderHeader() {
+            return `
+            <header class="bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800">
+                <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-lg font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+                            Armor builder
+                        </h1>
+                        <p class="text-[10px] text-slate-400 font-medium tracking-wide uppercase mt-0.5">By Coach Dan dubrovsky</p>
+                        <p class="text-sm text-slate-200 font-medium mt-1">היי, ${clientProfile.name}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="text-left hidden sm:block">
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">מטרה נוכחית</p>
+                            <p class="text-xs font-bold text-emerald-400">${clientProfile.goal}</p>
+                        </div>
+                        <div class="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700 relative">
+                            <i data-lucide="user" class="text-slate-300 w-5 h-5"></i>
+                            <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="max-w-md mx-auto px-2 flex justify-between pb-2 overflow-x-auto no-scrollbar">
+                    
+                    <button onclick="setTab('progress')" class="flex flex-col items-center gap-1 p-2 min-w-[70px] rounded-xl transition-all ${activeTab === 'progress' ? 'text-purple-400 bg-purple-500/10' : 'text-slate-500'}">
+                        <i data-lucide="activity" class="w-5 h-5"></i>
+                        <span class="text-[10px] font-medium">התקדמות</span>
+                    </button>
+
+                    <button onclick="setTab('workouts')" class="flex flex-col items-center gap-1 p-2 min-w-[70px] rounded-xl transition-all relative ${activeTab === 'workouts' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-500'}">
+                        <i data-lucide="lock" class="w-3 h-3 absolute top-1 right-2 text-slate-400"></i>
+                        <i data-lucide="dumbbell" class="w-5 h-5"></i>
+                        <span class="text-[10px] font-medium">תוכנית אימונים</span>
+                    </button>
+                    
+                    <button onclick="setTab('nutrition')" class="flex flex-col items-center gap-1 p-2 min-w-[70px] rounded-xl transition-all relative ${activeTab === 'nutrition' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500'}">
+                        <i data-lucide="lock" class="w-3 h-3 absolute top-1 right-2 text-slate-400"></i>
+                        <i data-lucide="utensils" class="w-5 h-5"></i>
+                        <span class="text-[10px] font-medium">תזונה</span>
+                    </button>
+
+                    <button onclick="setTab('videos')" class="flex flex-col items-center gap-1 p-2 min-w-[70px] rounded-xl transition-all ${activeTab === 'videos' ? 'text-orange-400 bg-orange-500/10' : 'text-slate-500'}">
+                        <i data-lucide="play-circle" class="w-5 h-5"></i>
+                        <span class="text-[10px] font-medium">הדרכות</span>
+                    </button>
+                </div>
+            </header>`;
+        }
+
+        function renderLockedContent(title, icon, message) {
+            return `
+            <div class="space-y-6 fade-in-zoom flex flex-col items-center justify-center h-80 text-center mt-10">
+                <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-4 relative shadow-lg">
+                    <i data-lucide="${icon}" class="w-10 h-10 text-slate-500 opacity-50"></i>
+                    <div class="absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-2 border border-slate-700">
+                        <i data-lucide="lock" class="w-5 h-5 text-slate-400"></i>
+                    </div>
+                </div>
+                <h2 class="text-xl font-bold text-slate-300">${title} נעולה</h2>
+                <p class="text-slate-500 max-w-[250px] mx-auto mt-2">${message}</p>
+            </div>`;
+        }
+
+        function renderWorkouts() {
+            return renderLockedContent("תוכנית האימונים", "dumbbell", "האזור נעול כרגע. בהמשך נפתח את האזור הזה לניהול התוכנית המלאה שלך.");
+        }
+
+        function renderNutrition() {
+            return renderLockedContent("התזונה", "utensils", "אזור התזונה נעול כרגע. נפתח אותו כשנתחיל לעבוד על בניית תפריט והרגלים.");
+        }
+
+        function renderProgress() {
+            return `
+            <div class="space-y-8 fade-in-zoom">
+                
+                <div class="bg-blue-600 rounded-2xl p-5 shadow-lg shadow-blue-900/20 relative overflow-hidden mb-6">
+                    <div class="relative z-10">
+                        <span class="text-blue-200 text-xs font-bold tracking-wider uppercase">אימון אישי</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">התקדמות ושיאים</h2>
+                        <p class="text-blue-100 text-xs mt-2 leading-relaxed bg-blue-700/30 p-2 rounded-lg border border-blue-500/30">
+                            כאן תוכלי לעקוב אחרי השיאים שלך בכל תרגיל מהאימונים המשותפים שלנו.
+                        </p>
+                    </div>
+                    <i data-lucide="trending-up" class="absolute -bottom-4 -left-4 text-white/10 w-32 h-32 transform rotate-12"></i>
+                </div>
+
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                    <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2">
+                        <i data-lucide="trophy" class="w-5 h-5 text-yellow-400"></i>
+                        שיפור משקלי עבודה (ק"ג)
+                    </h3>
+                    <div class="h-[400px] w-full flex items-center justify-center">
+                        ${progressData.strength.length > 0 ? `
+                            <canvas id="strengthChart"></canvas>
+                        ` : `
+                            <p class="text-slate-500 text-sm">הזן נתונים כדי לראות התקדמות</p>
+                        `}
+                    </div>
+                </div>
+                
+                <!-- SECTION START: פירוט לפי תרגיל -->
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                    <h3 class="text-lg font-bold text-slate-200 mb-3 flex items-center gap-2">
+                        <i data-lucide="search" class="w-5 h-5 text-blue-400"></i>
+                        פירוט לפי תרגיל
+                    </h3>
+                    
+                    <select id="exerciseSelect" onchange="updateExerciseDetails(this.value)" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-3 mb-2 focus:outline-none focus:border-blue-500 cursor-pointer">
+                        ${progressData.strength.map(d => `<option value="${d.exercise}" ${d.exercise === selectedProgressExercise ? 'selected' : ''}>${d.exercise}</option>`).join('')}
+                    </select>
+                    
+                    <div id="exerciseDetailsContent">
+                        <!-- Content injected via JS -->
+                    </div>
+                </div>
+                <!-- SECTION END -->
+
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-xl border border-slate-700">
+                    <h4 class="text-slate-300 font-medium mb-2">סיכום שבועי</h4>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <div class="text-3xl font-bold text-white">1</div>
+                            <div class="text-xs text-slate-500">אימונים אישיים</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-3xl font-bold text-slate-500">🔥</div>
+                            <div class="text-xs text-slate-500">התחלה מעולה!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function renderVideos() {
+            return `
+            <div class="space-y-6 fade-in-zoom">
+                <div class="bg-orange-600 rounded-2xl p-5 shadow-lg shadow-orange-900/20 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <span class="text-orange-200 text-xs font-bold tracking-wider uppercase">ספריית VOD</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">הדרכות טכניקה</h2>
+                        <p class="text-orange-100 text-sm mt-2 opacity-90">דגשים לביצוע נכון ומניעת פציעות</p>
+                    </div>
+                    <i data-lucide="play-circle" class="absolute -bottom-4 -left-4 text-white/10 w-32 h-32 transform rotate-12"></i>
+                </div>
+
+                <div class="space-y-3">
+                    ${videosData.length > 0 ? videosData.map(video => `
+                        <a href="${video.url}" target="_blank" rel="noopener noreferrer" class="block bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-orange-500/50 transition-colors group">
+                            <div class="flex justify-between items-start">
+                                <div class="flex gap-4">
+                                    <div class="bg-slate-900 h-12 w-12 rounded-lg flex items-center justify-center group-hover:bg-orange-500/10 transition-colors">
+                                        <i data-lucide="play-circle" class="w-6 h-6 text-orange-500"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-100 group-hover:text-orange-400 transition-colors">${video.title}</h4>
+                                        <span class="text-xs text-slate-500 bg-slate-900 px-2 py-0.5 rounded-full mt-1 inline-block">
+                                            ${video.category}
+                                        </span>
+                                    </div>
+                                </div>
+                                <i data-lucide="external-link" class="w-4 h-4 text-slate-500 group-hover:text-orange-400"></i>
+                            </div>
+                        </a>
+                    `).join('') : `
+                        <div class="text-center py-10">
+                            <p class="text-slate-500">אין סרטונים זמינים כרגע</p>
+                        </div>
+                    `}
+                </div>
+            </div>`;
+        }
+
+        // --- אתחול הגרפים ---
+        function initCharts() {
+            // השמדת גרפים ישנים אם קיימים
+            chartsInstance.forEach(chart => chart.destroy());
+            chartsInstance = [];
+
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = 'Assistant, sans-serif';
+
+            if (progressData.strength.length > 0) {
+                const ctxStrength = document.getElementById('strengthChart').getContext('2d');
+                const strengthChart = new Chart(ctxStrength, {
+                    type: 'bar',
+                    data: {
+                        labels: progressData.strength.map(d => d.exercise),
+                        datasets: [
+                            {
+                                label: 'משקל התחלה',
+                                data: progressData.strength.map(d => d.prev),
+                                backgroundColor: '#475569',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'שיא נוכחי',
+                                data: progressData.strength.map(d => d.current),
+                                backgroundColor: '#3b82f6',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { color: '#e2e8f0' } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) { label += ': '; }
+                                        if (context.parsed.x !== null) {
+                                            label += context.parsed.x === 0 ? 'משקל גוף/גומיה' : context.parsed.x + ' ק"ג';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { color: '#334155', drawBorder: false } },
+                            y: { grid: { display: false, drawBorder: false } }
+                        }
+                    }
+                });
+                chartsInstance.push(strengthChart);
+            }
+        }
+
+        // --- הרינדור הראשי ---
+        function render() {
+            const root = document.getElementById('app-root');
+            
+            let mainContent = '';
+            if (activeTab === 'workouts') mainContent = renderWorkouts();
+            else if (activeTab === 'nutrition') mainContent = renderNutrition();
+            else if (activeTab === 'progress') mainContent = renderProgress();
+            else if (activeTab === 'videos') mainContent = renderVideos();
+
+            root.innerHTML = `
+                ${renderHeader()}
+                <main class="max-w-md mx-auto p-4 pb-24">
+                    ${mainContent}
+                </main>
+            `;
+
+            // אתחול האייקונים של Lucide
+            lucide.createIcons();
+
+            // אם עברנו לטאב הגרפים, נצייר אותם ונעדכן את פרטי התרגיל
+            if (activeTab === 'progress') {
+                initCharts();
+                updateExerciseDetails(selectedProgressExercise);
+            }
+        }
+
+        // --- הפעלה ראשונית של האפליקציה ---
+        window.onload = () => {
+            render();
+        };
+
+    </script>
+</body>
+</html>
+
+
+```
