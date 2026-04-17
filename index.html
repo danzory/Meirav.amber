@@ -71,15 +71,19 @@
                 { date: 'נוכחי', weight: 0 }, // אם תרצה להוסיף שקילה אפשר כאן
             ],
             strength: [
-                { exercise: 'האק סקוואט', prev: 40, current: 40, reps: '5', sets: '-' },
-                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 37.5, reps: '8', sets: '-' },
+                { exercise: 'האק סקוואט', prev: 40, current: 65, reps: '8', sets: '-' },
+                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 40, reps: '6', sets: '-' },
                 { exercise: 'מתח גומיה אדומה', prev: 0, current: 0, reps: '4', sets: '-' },
+                { exercise: 'מתח בגרביטון רחב', prev: 35, current: 35, reps: '4', sets: '-' },
+                { exercise: 'חתירה מוט', prev: 30, current: 30, reps: '8', sets: '-' },
                 { exercise: 'שכיבות סמיכה (סמית)', prev: 0, current: 0, reps: '6', sets: '4' },
                 { exercise: 'דדליפט רומני', prev: 35, current: 35, reps: '8', sets: '-' },
                 { exercise: 'בולגרי יד אחת', prev: 12.5, current: 12.5, reps: '10', sets: '-' },
                 { exercise: 'לחיצת כתפיים מוט', prev: 20, current: 20, reps: '6', sets: '-' },
                 { exercise: 'סקול קראשר', prev: 15, current: 15, reps: '8', sets: '-' },
-                { exercise: 'כפיפת מרפקים W', prev: 15, current: 15, reps: '8', sets: '-' }
+                { exercise: 'כפיפת מרפקים W', prev: 15, current: 15, reps: '8', sets: '-' },
+                { exercise: 'כיסא רומי', prev: 10, current: 10, reps: '8', sets: '-' },
+                { exercise: 'תאומים בלחיצת רגליים', prev: 100, current: 100, reps: '8', sets: '-' }
             ]
         };
 
@@ -228,7 +232,7 @@
                         <i data-lucide="trophy" class="w-5 h-5 text-yellow-400"></i>
                         שיפור משקלי עבודה (ק"ג)
                     </h3>
-                    <div class="h-[400px] w-full flex items-center justify-center">
+                    <div class="h-[500px] w-full flex items-center justify-center">
                         ${progressData.strength.length > 0 ? `
                             <canvas id="strengthChart"></canvas>
                         ` : `
@@ -403,6 +407,3 @@
     </script>
 </body>
 </html>
-
-
-```
