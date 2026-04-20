@@ -59,26 +59,29 @@
         const clientProfile = {
             name: "מירב אמבר",
             goal: "אימון אישי - שיפור כוח וטכניקה",
-            startDate: "אימון ראשון",
+            workoutsCompleted: 3,
             status: "פעיל"
         };
 
         const videosData = [];
 
-        // נתוני אימון ראשון של מירב
+        // נתוני התקדמות של מירב
         const progressData = {
             weight: [
                 { date: 'נוכחי', weight: 0 }, // אם תרצה להוסיף שקילה אפשר כאן
             ],
             strength: [
                 { exercise: 'האק סקוואט', prev: 40, current: 65, reps: '8', sets: '-' },
-                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 40, reps: '6', sets: '-' },
-                { exercise: 'מתח גומיה אדומה', prev: 0, current: 0, reps: '4', sets: '-' },
+                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 87.5, reps: '6', sets: '-' }, // 43.75 כל צד
+                { exercise: 'מתח גומיה אדומה', prev: 0, current: 0, reps: '5', sets: '-' }, // עודכן ל-5 חזרות
                 { exercise: 'מתח בגרביטון רחב', prev: 35, current: 35, reps: '4', sets: '-' },
+                { exercise: 'מקבילים בגרביטון', prev: 35, current: 35, reps: '8', sets: '-' }, // תרגיל חדש
                 { exercise: 'חתירה מוט', prev: 30, current: 30, reps: '8', sets: '-' },
                 { exercise: 'שכיבות סמיכה (סמית)', prev: 0, current: 0, reps: '6', sets: '4' },
-                { exercise: 'דדליפט רומני', prev: 35, current: 35, reps: '8', sets: '-' },
+                { exercise: 'דדליפט רומני', prev: 35, current: 40, reps: '8', sets: '-' }, // עודכן ל-40
                 { exercise: 'בולגרי יד אחת', prev: 12.5, current: 12.5, reps: '10', sets: '-' },
+                { exercise: 'בולגרי בסמית', prev: 15, current: 15, reps: '6', sets: '-' }, // תרגיל חדש, 7.5 כל צד
+                { exercise: 'פרפר', prev: 8, current: 8, reps: '10', sets: '-' }, // תרגיל חדש, 4 כל יד
                 { exercise: 'לחיצת כתפיים מוט', prev: 20, current: 20, reps: '6', sets: '-' },
                 { exercise: 'סקול קראשר', prev: 15, current: 15, reps: '8', sets: '-' },
                 { exercise: 'כפיפת מרפקים W', prev: 15, current: 15, reps: '8', sets: '-' },
@@ -209,7 +212,197 @@
         }
 
         function renderNutrition() {
-            return renderLockedContent("התזונה", "utensils", "אזור התזונה נעול כרגע. נפתח אותו כשנתחיל לעבוד על בניית תפריט והרגלים.");
+            return `
+            <div class="space-y-6 fade-in-zoom pb-6">
+                
+                <div class="bg-emerald-600 rounded-2xl p-5 shadow-lg shadow-emerald-900/20 relative overflow-hidden mb-4">
+                    <div class="relative z-10">
+                        <span class="text-emerald-200 text-xs font-bold tracking-wider uppercase">תזונה מותאמת אישית</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">התפריט של מירב</h2>
+                        <p class="text-emerald-100 text-xs mt-2 leading-relaxed bg-emerald-700/30 p-2 rounded-lg border border-emerald-500/30">
+                            מטרה: חיטוב וירידה באחוזי שומן. התפריט מותאם ללא עוף ובשר, בנוי ל-2-3 ארוחות ביום, ומשלב את כל אבות המזון החשובים לתהליך שלך.
+                        </p>
+                    </div>
+                    <i data-lucide="utensils" class="absolute -bottom-4 -left-4 text-white/10 w-32 h-32 transform rotate-12"></i>
+                </div>
+
+                <!-- סיכום יומי -->
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                    <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center justify-center gap-2">
+                        <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
+                        יעדים יומיים לחיטוב
+                    </h3>
+                    <div class="grid grid-cols-4 gap-2 text-center">
+                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-700/50">
+                            <span class="block text-[10px] text-slate-400">קלוריות</span>
+                            <span class="block text-sm font-bold text-slate-100">~1480</span>
+                        </div>
+                        <div class="bg-red-500/10 p-2 rounded-lg border border-red-500/20">
+                            <span class="block text-[10px] text-red-400">חלבון</span>
+                            <span class="block text-sm font-bold text-red-100">~120g</span>
+                        </div>
+                        <div class="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
+                            <span class="block text-[10px] text-emerald-400">פחמימה</span>
+                            <span class="block text-sm font-bold text-emerald-100">~130g</span>
+                        </div>
+                        <div class="bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                            <span class="block text-[10px] text-amber-400">שומן</span>
+                            <span class="block text-sm font-bold text-amber-100">~50g</span>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-2 text-center">* הסך היומי כולל מרווח ביטחון לקפה, חלב, ומעט שמן לבישול.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center">
+                        <i data-lucide="droplets" class="w-6 h-6 text-blue-400 mb-1"></i>
+                        <span class="text-xs text-slate-400">מים ביום</span>
+                        <span class="text-sm font-bold text-slate-200">לפחות 2 ליטר</span>
+                    </div>
+                    <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center">
+                        <i data-lucide="pill" class="w-6 h-6 text-purple-400 mb-1"></i>
+                        <span class="text-xs text-slate-400">תוספים</span>
+                        <span class="text-sm font-bold text-slate-200">ברזל, מגנזיום</span>
+                    </div>
+                </div>
+
+                <!-- מקרא צבעים -->
+                <div class="flex justify-center flex-wrap gap-4 text-xs font-bold bg-slate-900 py-3 px-2 rounded-xl border border-slate-800">
+                    <span class="flex items-center gap-1.5 text-red-400"><div class="w-2.5 h-2.5 rounded-full bg-red-500"></div> חלבון</span>
+                    <span class="flex items-center gap-1.5 text-emerald-400"><div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> פחמימה</span>
+                    <span class="flex items-center gap-1.5 text-amber-400"><div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div> שומן</span>
+                    <span class="flex items-center gap-1.5 text-lime-400"><div class="w-2.5 h-2.5 rounded-full bg-lime-500"></div> ירקות</span>
+                </div>
+
+                <!-- ארוחה 1 -->
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                    <div class="bg-slate-900/50 p-3 border-b border-slate-700 flex items-start gap-3">
+                        <i data-lucide="sunrise" class="w-5 h-5 text-orange-400 mt-1 flex-shrink-0"></i>
+                        <div class="w-full">
+                            <h3 class="font-bold text-slate-200">ארוחה 1: בוקר מאוחרת</h3>
+                            <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px] font-mono font-medium">
+                                <span class="bg-slate-800 border border-slate-600 text-slate-300 px-1.5 py-0.5 rounded">~450 kcal</span>
+                                <span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded">32g חלבון</span>
+                                <span class="bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">42g פחמימה</span>
+                                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">15g שומן</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-4 text-sm">
+                        <div>
+                            <span class="block text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">חלבון - לבחור אופציה אחת:</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>ביצים (3 יחידות)</li>
+                                <li>יוגורט פרו (גביע וחצי - 300 גרם)</li>
+                                <li>קוטג' (קופסה שלמה - 250 גרם)</li>
+                                <li>גבינה צהובה 9%/16% (3 פרוסות - 75 גרם)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="block text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">פחמימה - לבחור אופציה אחת:</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>לחם כוסמין (2 פרוסות - 60 גרם)</li>
+                                <li>לחם קל (3 פרוסות - 75 גרם)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="block text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">שומן - לבחור אופציה אחת:</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>אבוקדו (30 גרם)</li>
+                                <li>טחינה גולמית (1 כף - 15 גרם)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="block text-lime-400 bg-lime-500/10 border border-lime-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">ירקות:</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>סלט ירקות (כ-300 גרם)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ארוחה 2 -->
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                    <div class="bg-slate-900/50 p-3 border-b border-slate-700 flex items-start gap-3">
+                        <i data-lucide="sun" class="w-5 h-5 text-yellow-400 mt-1 flex-shrink-0"></i>
+                        <div class="w-full">
+                            <h3 class="font-bold text-slate-200">ארוחה 2: צהריים / אחרי אימון</h3>
+                            <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px] font-mono font-medium">
+                                <span class="bg-slate-800 border border-slate-600 text-slate-300 px-1.5 py-0.5 rounded">~630 kcal</span>
+                                <span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded">54g חלבון</span>
+                                <span class="bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">59g פחמימה</span>
+                                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">20g שומן</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-4 text-sm">
+                        <div>
+                            <span class="block text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">חלבון - לבחור אופציה אחת:</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>פילה סלמון בתנור (200 גרם)</li>
+                                <li>דניס / לברק (250 גרם)</li>
+                                <li>טונה (קופסה וחצי - 165 גרם)</li>
+                                <li>אבקת חלבון (מנה וחצי - 45 גרם) - מעולה אחרי אימון</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="block text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">פחמימה - לבחור אופציה אחת:</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>אורז / אורז מלא (כוס מבושלת - 150 גרם)</li>
+                                <li>תפוח אדמה / בטטה (יחידה בינונית - 150 גרם)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="block text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">שומן (אופציונלי):</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>טחינה גולמית (1 כף - 15 גרם)</li>
+                                <li class="text-slate-400 text-xs mt-1">* אם אוכלים סלמון, אין חובה להוסיף מנת שומן נוספת כיוון שהדג שומני.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="block text-lime-400 bg-lime-500/10 border border-lime-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">ירקות:</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>סלט ירקות או ברוקולי (כ-300 גרם)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ארוחה 3 -->
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                    <div class="bg-slate-900/50 p-3 border-b border-slate-700 flex items-start gap-3">
+                        <i data-lucide="moon" class="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0"></i>
+                        <div class="w-full">
+                            <h3 class="font-bold text-slate-200">ארוחה 3: ערב (או ארוחת השלמה)</h3>
+                            <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px] font-mono font-medium">
+                                <span class="bg-slate-800 border border-slate-600 text-slate-300 px-1.5 py-0.5 rounded">~270 kcal</span>
+                                <span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded">30g חלבון</span>
+                                <span class="bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">15g פחמימה</span>
+                                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">10g שומן</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-4 text-sm">
+                        <p class="text-slate-400 text-xs mb-3">ארוחה קלה להשלמת הערכים, במיוחד בימים של אימון.</p>
+                        <div>
+                            <span class="block text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">חלבון - לבחור אופציה אחת:</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>טונה (1 קופסה - 110 גרם) + ביצה קשה 1</li>
+                                <li>ביצים (3 יחידות) - במידה ולא נאכלו בבוקר</li>
+                                <li>יוגורט פרו (גביע וחצי - 300 גרם)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="block text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">פחמימה - לבחור אופציה אחת:</span>
+                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>לחם קל (2 פרוסות - 50 גרם)</li>
+                                <li>לחם כוסמין (1 פרוסה - 30 גרם)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>`;
         }
 
         function renderProgress() {
@@ -259,15 +452,15 @@
                 <!-- SECTION END -->
 
                 <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-xl border border-slate-700">
-                    <h4 class="text-slate-300 font-medium mb-2">סיכום שבועי</h4>
+                    <h4 class="text-slate-300 font-medium mb-2">סיכום התמדה</h4>
                     <div class="flex justify-between items-end">
                         <div>
-                            <div class="text-3xl font-bold text-white">1</div>
-                            <div class="text-xs text-slate-500">אימונים אישיים</div>
+                            <div class="text-3xl font-bold text-white">${clientProfile.workoutsCompleted}</div>
+                            <div class="text-xs text-slate-500">אימונים אישיים הושלמו</div>
                         </div>
                         <div class="text-right">
                             <div class="text-3xl font-bold text-slate-500">🔥</div>
-                            <div class="text-xs text-slate-500">התחלה מעולה!</div>
+                            <div class="text-xs text-slate-500">עבודה אלופה!</div>
                         </div>
                     </div>
                 </div>
@@ -407,3 +600,13 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+```
