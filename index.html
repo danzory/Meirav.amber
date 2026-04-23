@@ -59,7 +59,7 @@
         const clientProfile = {
             name: "מירב אמבר",
             goal: "אימון אישי - שיפור כוח וטכניקה",
-            workoutsCompleted: 3,
+            workoutsCompleted: 4,
             status: "פעיל"
         };
 
@@ -71,17 +71,17 @@
                 { date: 'נוכחי', weight: 0 }, // אם תרצה להוסיף שקילה אפשר כאן
             ],
             strength: [
-                { exercise: 'האק סקוואט', prev: 40, current: 65, reps: '8', sets: '-' },
-                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 87.5, reps: '6', sets: '-' }, // 43.75 כל צד
-                { exercise: 'מתח גומיה אדומה', prev: 0, current: 0, reps: '5', sets: '-' }, // עודכן ל-5 חזרות
-                { exercise: 'מתח בגרביטון רחב', prev: 35, current: 35, reps: '4', sets: '-' },
-                { exercise: 'מקבילים בגרביטון', prev: 35, current: 35, reps: '8', sets: '-' }, // תרגיל חדש
-                { exercise: 'חתירה מוט', prev: 30, current: 30, reps: '8', sets: '-' },
+                { exercise: 'האק סקוואט', prev: 40, current: 70, reps: '8', sets: '-' },
+                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 90, reps: '6', sets: '-' }, // 45 כל צד
+                { exercise: 'מתח גומיה אדומה', prev: 0, current: 0, reps: '5', sets: '-' }, 
+                { exercise: 'מתח בגרביטון רחב', prev: 35, current: 35, reps: '5', sets: '-' }, 
+                { exercise: 'מקבילים בגרביטון', prev: 35, current: 35, reps: '8', sets: '-' }, 
+                { exercise: 'חתירה מוט', prev: 30, current: 32.5, reps: '5', sets: '-' },
                 { exercise: 'שכיבות סמיכה (סמית)', prev: 0, current: 0, reps: '6', sets: '4' },
-                { exercise: 'דדליפט רומני', prev: 35, current: 40, reps: '8', sets: '-' }, // עודכן ל-40
+                { exercise: 'דדליפט רומני', prev: 35, current: 45, reps: '5', sets: '-' }, 
                 { exercise: 'בולגרי יד אחת', prev: 12.5, current: 12.5, reps: '10', sets: '-' },
-                { exercise: 'בולגרי בסמית', prev: 15, current: 15, reps: '6', sets: '-' }, // תרגיל חדש, 7.5 כל צד
-                { exercise: 'פרפר', prev: 8, current: 8, reps: '10', sets: '-' }, // תרגיל חדש, 4 כל יד
+                { exercise: 'בולגרי בסמית', prev: 15, current: 17.5, reps: '6', sets: '-' }, // 8.75 כל צד
+                { exercise: 'פרפר', prev: 8, current: 8, reps: '10', sets: '-' }, 
                 { exercise: 'לחיצת כתפיים מוט', prev: 20, current: 20, reps: '6', sets: '-' },
                 { exercise: 'סקול קראשר', prev: 15, current: 15, reps: '8', sets: '-' },
                 { exercise: 'כפיפת מרפקים W', prev: 15, current: 15, reps: '8', sets: '-' },
@@ -109,18 +109,20 @@
             
             const container = document.getElementById('exerciseDetailsContent');
             if(container) {
-                // בדיקה האם זה משקל גוף/גומיה (משקל 0) או משקל אמיתי בק"ג
-                const weightDisplay = exProgress.current > 0 ? exProgress.current + ' ק"ג' : 'משקל גוף / גומייה';
+                // תיקון תצוגת משקלים - הפרדה בין משקל התחלה למשקל נוכחי
+                const isBodyweight = exProgress.current === 0 && exProgress.prev === 0;
+                const prevWeightDisplay = isBodyweight ? 'משקל גוף / גומייה' : (exProgress.prev > 0 ? exProgress.prev + ' ק"ג' : '0 ק"ג');
+                const currentWeightDisplay = isBodyweight ? 'משקל גוף / גומייה' : (exProgress.current > 0 ? exProgress.current + ' ק"ג' : '0 ק"ג');
 
                 container.innerHTML = `
                     <div class="grid grid-cols-2 gap-3 mb-3 mt-2">
                         <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
                             <span class="block text-xs text-slate-500 mb-1">משקל התחלה</span>
-                            <span class="text-lg font-bold text-slate-300">${weightDisplay}</span>
+                            <span class="text-lg font-bold text-slate-300">${prevWeightDisplay}</span>
                         </div>
                         <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
                             <span class="block text-xs text-blue-400 mb-1">שיא משקל נוכחי</span>
-                            <span class="text-lg font-bold text-blue-400">${weightDisplay}</span>
+                            <span class="text-lg font-bold text-blue-400">${currentWeightDisplay}</span>
                         </div>
                     </div>
                     <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 mb-3">
@@ -133,9 +135,9 @@
                     <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
                         <span class="block text-xs text-slate-500 mb-2">מעקב לאימון הבא (יעד)</span>
                         <div class="text-sm text-slate-400 italic font-mono bg-slate-950 p-2 rounded border border-slate-800">
-                            סט 1: ${weightDisplay} × __ חזרות <br>
-                            סט 2: ${weightDisplay} × __ חזרות <br>
-                            סט 3: ${weightDisplay} × __ חזרות
+                            סט 1: ${currentWeightDisplay} × __ חזרות <br>
+                            סט 2: ${currentWeightDisplay} × __ חזרות <br>
+                            סט 3: ${currentWeightDisplay} × __ חזרות
                         </div>
                     </div>
                 `;
@@ -293,7 +295,7 @@
                             <span class="block text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">חלבון - לבחור אופציה אחת:</span>
                             <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
                                 <li>ביצים (3 יחידות)</li>
-                                <li>יוגורט פרו (גביע וחצי - 300 גרם)</li>
+                                <li>יוגורט פרו (גביע וחצי - 300 גרם) <span class="text-xs text-purple-300 ml-1">*מומלץ להוסיף חופן קטן של אוכמניות טריות</span></li>
                                 <li>קוטג' (קופסה שלמה - 250 גרם)</li>
                                 <li>גבינה צהובה 9%/16% (3 פרוסות - 75 גרם)</li>
                             </ul>
@@ -301,6 +303,7 @@
                         <div>
                             <span class="block text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">פחמימה - לבחור אופציה אחת:</span>
                             <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
+                                <li>שיבולת שועל / קוואקר (4 כפות - כ-40 גרם)</li>
                                 <li>לחם כוסמין (2 פרוסות - 60 גרם)</li>
                                 <li>לחם קל (3 פרוסות - 75 גרם)</li>
                             </ul>
@@ -348,7 +351,7 @@
                         <div>
                             <span class="block text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">פחמימה - לבחור אופציה אחת:</span>
                             <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>אורז / אורז מלא (כוס מבושלת - 150 גרם)</li>
+                                <li>אורז / קינואה / כוסמת (כוס מבושלת - 150 גרם)</li>
                                 <li>תפוח אדמה / בטטה (יחידה בינונית - 150 גרם)</li>
                             </ul>
                         </div>
@@ -630,6 +633,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
