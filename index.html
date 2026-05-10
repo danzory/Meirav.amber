@@ -59,7 +59,7 @@
         const clientProfile = {
             name: "מירב אמבר",
             goal: "אימון אישי - שיפור כוח וטכניקה",
-            workoutsCompleted: 5,
+            workoutsCompleted: 4,
             status: "פעיל"
         };
 
@@ -72,23 +72,22 @@
             ],
             strength: [
                 { exercise: 'האק סקוואט', prev: 40, current: 70, reps: '8', sets: '-' },
-                { exercise: 'סקוואט חופשי', prev: 0, current: 35, reps: '6', sets: '-' },
-                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 90, reps: '7', sets: '-' }, // 45 כל צד
-                { exercise: 'מתח גומיה אדומה', prev: 0, current: 0, reps: '5', sets: '-' }, 
+                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 92.5, reps: '6', sets: '-' }, // 46.25 כל צד
+                { exercise: 'מתח גומיה אדומה (צרה)', prev: 0, current: 0, reps: '3', sets: '-' }, 
                 { exercise: 'מתח בגרביטון רחב', prev: 35, current: 35, reps: '5', sets: '-' }, 
-                { exercise: 'פולי עליון במכונה', prev: 0, current: 55, reps: '5', sets: '-' }, // 27.5 כל צד
-                { exercise: 'מקבילים בגרביטון', prev: 35, current: 35, reps: '9', sets: '-' }, 
+                { exercise: 'מקבילים בגרביטון', prev: 35, current: 28, reps: '5', sets: '-' }, 
                 { exercise: 'חתירה מוט', prev: 30, current: 32.5, reps: '5', sets: '-' },
                 { exercise: 'שכיבות סמיכה (סמית)', prev: 0, current: 0, reps: '6', sets: '4' },
-                { exercise: 'דדליפט רומני', prev: 35, current: 47.5, reps: '8', sets: '-' }, 
-                { exercise: 'בולגרי יד אחת', prev: 12.5, current: 15, reps: '8', sets: '-' },
+                { exercise: 'דדליפט רומני', prev: 35, current: 45, reps: '5', sets: '-' }, 
+                { exercise: 'בולגרי יד אחת', prev: 12.5, current: 20, reps: '6', sets: '-' },
                 { exercise: 'בולגרי בסמית', prev: 15, current: 17.5, reps: '6', sets: '-' }, // 8.75 כל צד
+                { exercise: 'לחיצת רגליים', prev: 130, current: 130, reps: '6', sets: '-' },
+                { exercise: 'כפיפת ברכיים בישיבה', prev: 35, current: 35, reps: '8', sets: '-' },
                 { exercise: 'פרפר', prev: 8, current: 8, reps: '10', sets: '-' }, 
-                { exercise: 'לחיצת כתפיים מוט', prev: 20, current: 22.5, reps: '4', sets: '-' },
+                { exercise: 'לחיצת כתפיים מוט', prev: 20, current: 22.5, reps: '6', sets: '-' },
                 { exercise: 'סקול קראשר', prev: 15, current: 15, reps: '8', sets: '-' },
                 { exercise: 'כפיפת מרפקים W', prev: 15, current: 15, reps: '8', sets: '-' },
                 { exercise: 'כיסא רומי', prev: 10, current: 10, reps: '8', sets: '-' },
-                { exercise: 'כפיפות בטן שיפוע תחתון', prev: 0, current: 2.5, reps: '7', sets: '-' },
                 { exercise: 'תאומים בלחיצת רגליים', prev: 100, current: 100, reps: '8', sets: '-' }
             ]
         };
@@ -114,8 +113,15 @@
             if(container) {
                 // תיקון תצוגת משקלים - הפרדה בין משקל התחלה למשקל נוכחי
                 const isBodyweight = exProgress.current === 0 && exProgress.prev === 0;
-                const prevWeightDisplay = isBodyweight ? 'משקל גוף / גומייה' : (exProgress.prev > 0 ? exProgress.prev + ' ק"ג' : '0 ק"ג');
-                const currentWeightDisplay = isBodyweight ? 'משקל גוף / גומייה' : (exProgress.current > 0 ? exProgress.current + ' ק"ג' : '0 ק"ג');
+                let prevWeightDisplay = isBodyweight ? 'משקל גוף / גומייה' : (exProgress.prev > 0 ? exProgress.prev + ' ק"ג' : '0 ק"ג');
+                let currentWeightDisplay = isBodyweight ? 'משקל גוף / גומייה' : (exProgress.current > 0 ? exProgress.current + ' ק"ג' : '0 ק"ג');
+                
+                // התאמה לגרביטון - משקל נמוך יותר הוא שיא טוב יותר
+                let isGraviton = exName.includes('גרביטון');
+                if (isGraviton) {
+                     prevWeightDisplay = exProgress.prev > 0 ? '-' + exProgress.prev + ' ק"ג' : '0 ק"ג';
+                     currentWeightDisplay = exProgress.current > 0 ? '-' + exProgress.current + ' ק"ג' : '0 ק"ג';
+                }
 
                 container.innerHTML = `
                     <div class="grid grid-cols-2 gap-3 mb-3 mt-2">
@@ -553,6 +559,11 @@
 
             if (progressData.strength.length > 0) {
                 const ctxStrength = document.getElementById('strengthChart').getContext('2d');
+                
+                // יצירת צבעים מותאמים לגרביטון (כדי להראות שמשקל נמוך יותר זה טוב)
+                const bgColorsPrev = progressData.strength.map(d => d.exercise.includes('גרביטון') ? '#64748b' : '#475569');
+                const bgColorsCurrent = progressData.strength.map(d => d.exercise.includes('גרביטון') ? '#10b981' : '#3b82f6'); // ירוק לגרביטון, כחול לרגיל
+
                 const strengthChart = new Chart(ctxStrength, {
                     type: 'bar',
                     data: {
@@ -561,13 +572,13 @@
                             {
                                 label: 'משקל התחלה',
                                 data: progressData.strength.map(d => d.prev),
-                                backgroundColor: '#475569',
+                                backgroundColor: bgColorsPrev,
                                 borderRadius: 4
                             },
                             {
                                 label: 'שיא נוכחי',
                                 data: progressData.strength.map(d => d.current),
-                                backgroundColor: '#3b82f6',
+                                backgroundColor: bgColorsCurrent,
                                 borderRadius: 4
                             }
                         ]
@@ -583,8 +594,15 @@
                                     label: function(context) {
                                         let label = context.dataset.label || '';
                                         if (label) { label += ': '; }
+                                        
+                                        const exerciseName = context.chart.data.labels[context.dataIndex];
+                                        
                                         if (context.parsed.x !== null) {
-                                            label += context.parsed.x === 0 ? 'משקל גוף/גומיה' : context.parsed.x + ' ק"ג';
+                                            if (exerciseName.includes('גרביטון') && context.parsed.x > 0) {
+                                                label += '-' + context.parsed.x + ' ק"ג'; // סימן מינוס לגרביטון
+                                            } else {
+                                                label += context.parsed.x === 0 ? 'משקל גוף/גומיה' : context.parsed.x + ' ק"ג';
+                                            }
                                         }
                                         return label;
                                     }
@@ -636,17 +654,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-```
