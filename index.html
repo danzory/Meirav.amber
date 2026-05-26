@@ -2,52 +2,17 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Coach PRO - מירב אמבר</title>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap');
-        
-        body {
-            font-family: 'Assistant', sans-serif;
-            background-color: #020617; /* slate-950 */
-            color: #f1f5f9; /* slate-100 */
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Animations */
-        .fade-in-zoom {
-            animation: fadeInZoom 0.3s ease-out forwards;
-        }
-
-        @keyframes fadeInZoom {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* Hide scrollbar for tabs */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
+        body { font-family: 'Assistant', sans-serif; background-color: #020617; color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+        .fade-in-zoom { animation: fadeInZoom 0.3s ease-out forwards; }
+        @keyframes fadeInZoom { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
@@ -55,685 +20,84 @@
     <div id="app-root"></div>
 
     <script>
-        // --- אזור הנתונים ---
-        const clientProfile = {
-            name: "מירב אמבר",
-            goal: "אימון אישי - שיפור כוח וטכניקה",
-            workoutsCompleted: 4,
-            status: "פעיל"
+        // --- חיבור ל-Firebase ---
+        const DB_URL = "https://trainer-2026-default-rtdb.europe-west1.firebasedatabase.app/clients/מירב/workouts.json";
+
+        // מילון תרגומים - וודא שהמפתחות כאן תואמים למה שאתה שולח לבוט
+        const exerciseMap = {
+            "סקוואט": "squat",
+            "לחיצת רגליים": "legPress",
+            "האק סקוואט": "hackSquat",
+            "דדליפט רומני": "romanianDeadlift",
+            "פולי עליון": "latPulldown"
         };
 
-        const videosData = [];
+        let liveWorkouts = [];
 
-        // נתוני התקדמות של מירב
-        const progressData = {
-            weight: [
-                { date: 'נוכחי', weight: 0 }, // אם תרצה להוסיף שקילה אפשר כאן
-            ],
-            strength: [
-                { exercise: 'האק סקוואט', prev: 40, current: 80, reps: '8', sets: '-' }, // שופר ל-80 ל-8
-                { exercise: 'סקוואט חופשי', prev: 40, current: 42.5, reps: '3', sets: '-' }, // עדכון: סקוואט חופשי 42.5 ל-3
-                { exercise: 'היפטראסט במכונה', prev: 37.5, current: 100, reps: '6', sets: '-' }, // 50 כל צד = 100 סה"כ ל-6 חזרות
-                { exercise: 'מתח גומיה אדומה (צרה)', prev: 0, current: 0, reps: '4', sets: '-' },
-                { exercise: 'מתח בגרביטון רחב', prev: 35, current: 35, reps: '5', sets: '-' }, 
-                { exercise: 'מקבילים בגרביטון', prev: 35, current: 21, reps: '3', sets: '-' }, // נשאר -21 ל-3
-                { exercise: 'חתירה מוט', prev: 30, current: 32.5, reps: '-', sets: '-' }, 
-                { exercise: 'חתירה צרה במכונה', prev: 0, current: 50, reps: '6', sets: '-' }, 
-                { exercise: 'פולי עליון במכונה', prev: 0, current: 60, reps: '7', sets: '-' }, // תרגיל חדש: 30 כל צד ל-7
-                { exercise: 'לחיצת חזה בסמית', prev: 0, current: 20, reps: '4', sets: '-' }, // 10 כל צד = 20 סה"כ ל-4
-                { exercise: 'שכיבות סמיכה (סמית)', prev: 0, current: 0, reps: '6', sets: '4' },
-                { exercise: 'דדליפט רומני', prev: 35, current: 52.5, reps: '6', sets: '-' }, // שופר ל-52.5 ל-6
-                { exercise: 'בולגרי יד אחת', prev: 12.5, current: 20, reps: '6', sets: '-' },
-                { exercise: 'בולגרי עם שתי משקולות', prev: 15, current: 20, reps: '6', sets: '-' }, // 10 כל צד (סה"כ 20) ל-6
-                { exercise: 'לחיצת רגליים', prev: 130, current: 130, reps: '6', sets: '-' },
-                { exercise: 'לחיצת רגליים - רגל אחת', prev: 0, current: 30, reps: '8', sets: '-' }, // תרגיל חדש: 30 ל-8
-                { exercise: 'כפיפת ברכיים שכיבה', prev: 0, current: 6, reps: '10', sets: '-' }, // שופרו חזרות ל-10
-                { exercise: 'פרפר', prev: 8, current: 8, reps: '10', sets: '-' }, 
-                { exercise: 'לחיצת כתפיים מוט', prev: 20, current: 22.5, reps: '6', sets: '-' },
-                { exercise: 'סקול קראשר', prev: 15, current: 15, reps: '8', sets: '-' },
-                { exercise: 'כפיפת מרפקים W', prev: 15, current: 15, reps: '8', sets: '-' },
-                { exercise: 'כיסא רומי', prev: 10, current: 10, reps: '8', sets: '-' },
-                { exercise: 'תאומים בלחיצת רגליים', prev: 100, current: 100, reps: '8', sets: '-' }
-            ]
-        };
-
-        // --- מצב האפליקציה (State) ---
-        let activeTab = 'workouts'; // טאב ברירת המחדל שונה לתוכנית אימונים
-        let chartsInstance = [];
-        let selectedProgressExercise = progressData.strength[0]?.exercise || '';
-
-        // --- פונקציות עזר ורינדור ---
-
-        function setTab(tabName) {
-            activeTab = tabName;
-            render();
-        }
-
-        function updateExerciseDetails(exName) {
-            selectedProgressExercise = exName;
-            const exProgress = progressData.strength.find(d => d.exercise === exName);
-            if (!exProgress) return;
-            
-            const container = document.getElementById('exerciseDetailsContent');
-            if(container) {
-                // תיקון תצוגת משקלים - הפרדה בין משקל התחלה למשקל נוכחי
-                const isBodyweight = exProgress.current === 0 && exProgress.prev === 0;
-                let prevWeightDisplay = isBodyweight ? 'משקל גוף / גומייה' : (exProgress.prev > 0 ? exProgress.prev + ' ק"ג' : '0 ק"ג');
-                let currentWeightDisplay = isBodyweight ? 'משקל גוף / גומייה' : (exProgress.current > 0 ? exProgress.current + ' ק"ג' : '0 ק"ג');
-                
-                // התאמה לגרביטון - משקל נמוך יותר הוא שיא טוב יותר
-                let isGraviton = exName.includes('גרביטון');
-                if (isGraviton) {
-                     prevWeightDisplay = exProgress.prev > 0 ? '-' + exProgress.prev + ' ק"ג' : '0 ק"ג';
-                     currentWeightDisplay = exProgress.current > 0 ? '-' + exProgress.current + ' ק"ג' : '0 ק"ג';
+        async function fetchWorkouts() {
+            try {
+                const response = await fetch(DB_URL);
+                const data = await response.json();
+                if (data) {
+                    liveWorkouts = Object.values(data);
+                    console.log("נתונים מהענן:", liveWorkouts);
                 }
-
-                container.innerHTML = `
-                    <div class="grid grid-cols-2 gap-3 mb-3 mt-2">
-                        <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                            <span class="block text-xs text-slate-500 mb-1">משקל התחלה</span>
-                            <span class="text-lg font-bold text-slate-300">${prevWeightDisplay}</span>
-                        </div>
-                        <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                            <span class="block text-xs text-blue-400 mb-1">שיא משקל נוכחי</span>
-                            <span class="text-lg font-bold text-blue-400">${currentWeightDisplay}</span>
-                        </div>
-                    </div>
-                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 mb-3">
-                        <span class="block text-xs text-slate-500 mb-1">ביצוע באימון אחרון</span>
-                        <span class="text-md font-medium text-slate-200 flex items-center gap-2">
-                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
-                            ${exProgress.sets !== '-' ? exProgress.sets + ' סטים | ' : ''} ${exProgress.reps} חזרות
-                        </span>
-                    </div>
-                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                        <span class="block text-xs text-slate-500 mb-2">מעקב לאימון הבא (יעד)</span>
-                        <div class="text-sm text-slate-400 italic font-mono bg-slate-950 p-2 rounded border border-slate-800">
-                            סט 1: ${currentWeightDisplay} × __ חזרות <br>
-                            סט 2: ${currentWeightDisplay} × __ חזרות <br>
-                            סט 3: ${currentWeightDisplay} × __ חזרות
-                        </div>
-                    </div>
-                `;
-                lucide.createIcons(); // רענון אייקונים
-            }
+                render(); // רינדור האפליקציה אחרי שיש נתונים
+            } catch (e) { console.error(e); render(); }
         }
+
+        const clientProfile = { name: "מירב אמבר", goal: "אימון אישי", status: "פעיל" };
+        let activeTab = 'workouts';
+
+        function setTab(tabName) { activeTab = tabName; render(); }
 
         function renderHeader() {
             return `
             <header class="bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800">
                 <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
                     <div>
-                        <h1 class="text-lg font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-                            Armor builder
-                        </h1>
-                        <p class="text-[10px] text-slate-400 font-medium tracking-wide uppercase mt-0.5">By Coach Dan dubrovsky</p>
-                        <p class="text-sm text-slate-200 font-medium mt-1">היי, ${clientProfile.name}</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="text-left hidden sm:block">
-                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">מטרה נוכחית</p>
-                            <p class="text-xs font-bold text-emerald-400">${clientProfile.goal}</p>
-                        </div>
-                        <div class="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700 relative">
-                            <i data-lucide="user" class="text-slate-300 w-5 h-5"></i>
-                            <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
-                        </div>
+                        <h1 class="text-lg font-bold text-white">מירב אמבר</h1>
+                        <p class="text-xs text-slate-400">Armor Builder | Coach Dan</p>
                     </div>
                 </div>
-                
-                <div class="max-w-md mx-auto px-2 flex justify-between pb-2 overflow-x-auto no-scrollbar">
-                    
-                    <button onclick="setTab('progress')" class="flex flex-col items-center gap-1 p-2 min-w-[70px] rounded-xl transition-all ${activeTab === 'progress' ? 'text-purple-400 bg-purple-500/10' : 'text-slate-500'}">
-                        <i data-lucide="activity" class="w-5 h-5"></i>
-                        <span class="text-[10px] font-medium">התקדמות</span>
-                    </button>
-
-                    <button onclick="setTab('workouts')" class="flex flex-col items-center gap-1 p-2 min-w-[70px] rounded-xl transition-all relative ${activeTab === 'workouts' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-500'}">
-                        <i data-lucide="lock" class="w-3 h-3 absolute top-1 right-2 text-slate-400"></i>
-                        <i data-lucide="dumbbell" class="w-5 h-5"></i>
-                        <span class="text-[10px] font-medium">תוכנית אימונים</span>
-                    </button>
-                    
-                    <button onclick="setTab('nutrition')" class="flex flex-col items-center gap-1 p-2 min-w-[70px] rounded-xl transition-all relative ${activeTab === 'nutrition' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500'}">
-                        <i data-lucide="lock" class="w-3 h-3 absolute top-1 right-2 text-slate-400"></i>
-                        <i data-lucide="utensils" class="w-5 h-5"></i>
-                        <span class="text-[10px] font-medium">תזונה</span>
-                    </button>
-
-                    <button onclick="setTab('videos')" class="flex flex-col items-center gap-1 p-2 min-w-[70px] rounded-xl transition-all ${activeTab === 'videos' ? 'text-orange-400 bg-orange-500/10' : 'text-slate-500'}">
-                        <i data-lucide="play-circle" class="w-5 h-5"></i>
-                        <span class="text-[10px] font-medium">הדרכות</span>
-                    </button>
+                <div class="max-w-md mx-auto px-2 flex justify-between pb-2">
+                    <button onclick="setTab('workouts')" class="p-2 ${activeTab === 'workouts' ? 'text-blue-400' : 'text-slate-500'}">אימונים</button>
+                    <button onclick="setTab('progress')" class="p-2 ${activeTab === 'progress' ? 'text-purple-400' : 'text-slate-500'}">התקדמות</button>
                 </div>
             </header>`;
         }
 
-        function renderLockedContent(title, icon, message) {
-            return `
-            <div class="space-y-6 fade-in-zoom flex flex-col items-center justify-center h-80 text-center mt-10">
-                <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-4 relative shadow-lg">
-                    <i data-lucide="${icon}" class="w-10 h-10 text-slate-500 opacity-50"></i>
-                    <div class="absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-2 border border-slate-700">
-                        <i data-lucide="lock" class="w-5 h-5 text-slate-400"></i>
-                    </div>
-                </div>
-                <h2 class="text-xl font-bold text-slate-300">${title} נעולה</h2>
-                <p class="text-slate-500 max-w-[250px] mx-auto mt-2">${message}</p>
-            </div>`;
-        }
-
-        function createExerciseCard(num, name, notes, sets, reps) {
-            return `
-            <div class="bg-slate-800 rounded-xl border border-slate-700 p-4 flex gap-4 items-start shadow-sm hover:border-indigo-500/50 transition-colors">
-                <div class="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-lg flex-shrink-0 border border-indigo-500/30 mt-0.5">
-                    ${num}
-                </div>
-                <div class="flex-1">
-                    <h4 class="font-bold text-slate-100 text-lg">${name}</h4>
-                    ${notes ? `<p class="text-sm text-slate-400 mt-1">${notes}</p>` : ''}
-                    <div class="flex gap-3 mt-3 text-xs font-medium">
-                        <span class="bg-slate-900 border border-slate-700 text-slate-300 px-2 py-1.5 rounded-md flex items-center gap-1.5">
-                            <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-400"></i> ${sets} סטים
-                        </span>
-                        <span class="bg-slate-900 border border-slate-700 text-slate-300 px-2 py-1.5 rounded-md flex items-center gap-1.5">
-                            <i data-lucide="repeat" class="w-3.5 h-3.5 text-emerald-400"></i> ${reps} חזרות
-                        </span>
-                    </div>
-                </div>
-            </div>
-            `;
-        }
-
         function renderWorkouts() {
-            return `
-            <div class="space-y-6 fade-in-zoom pb-6">
-                
-                <!-- Header -->
-                <div class="bg-indigo-600 rounded-2xl p-5 shadow-lg shadow-indigo-900/20 relative overflow-hidden mb-4">
-                    <div class="relative z-10">
-                        <span class="text-indigo-200 text-xs font-bold tracking-wider uppercase">תוכנית מותאמת אישית</span>
-                        <h2 class="text-2xl font-bold text-white mt-1">תוכנית Full Body</h2>
-                        <p class="text-indigo-100 text-sm mt-2 leading-relaxed bg-indigo-700/30 p-2 rounded-lg border border-indigo-500/30">
-                            אימון גוף מלא המתמקד בתרגילי בסיס מורכבים לשיפור כוח, טכניקה ובניית מסת שריר.
-                        </p>
-                    </div>
-                    <i data-lucide="dumbbell" class="absolute -bottom-4 -left-4 text-white/10 w-32 h-32 transform rotate-12"></i>
-                </div>
-
-                <!-- Guidelines -->
-                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden mb-6 shadow-md">
-                    <div class="bg-slate-900/80 p-3 border-b border-slate-700 flex items-center gap-2">
-                        <i data-lucide="alert-circle" class="w-5 h-5 text-amber-400"></i>
-                        <h3 class="font-bold text-slate-200">דגשים חשובים: איך לגשת לסט?</h3>
-                    </div>
-                    <div class="p-4 space-y-5 text-sm text-slate-300">
-                        <div>
-                            <strong class="text-amber-400 block mb-1.5 flex items-center gap-2"><i data-lucide="flame" class="w-4 h-4"></i> חימום לפני כל תרגיל:</strong>
-                            <p class="leading-relaxed">1-3 סטים. בתרגילים פשוטים (כמו כפיפת מרפק) מספיק סט אחד, ובתרגילים מורכבים (כמו סקוואט) בצעו עד 3 סטים. הקשיבו לגוף ואל תמהרו.</p>
-                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 mt-3 text-xs font-mono text-slate-400 leading-loose">
-                                <span class="text-slate-300 font-bold border-b border-slate-800 pb-1 mb-2 block">דוגמה לחימום (בחתירה עם מוט, סט עבודה 60 ק"ג):</span>
-                                <span class="text-emerald-400/80">סט 1:</span> 20 ק"ג × 10 חזרות<br>
-                                <span class="text-emerald-400/80">סט 2:</span> 40 ק"ג × 6 חזרות<br>
-                                <span class="text-emerald-400/80">סט 3:</span> 50 ק"ג × 3 חזרות
-                            </div>
-                        </div>
-                        <div class="border-t border-slate-700/50 pt-4">
-                            <strong class="text-blue-400 block mb-1.5 flex items-center gap-2"><i data-lucide="timer" class="w-4 h-4"></i> מנוחה בין סטים:</strong>
-                            <p>1-3 דקות, בהתאם לעצימות הסט וההרגשה האישית.</p>
-                        </div>
-                        <div class="border-t border-slate-700/50 pt-4">
-                            <strong class="text-red-400 block mb-1.5 flex items-center gap-2"><i data-lucide="target" class="w-4 h-4"></i> אינטנסיביות וטכניקה:</strong>
-                            <p class="leading-relaxed">המטרה היא להגיע קרוב לכשל, או עד לכשל מוחלט, בכל סט עבודה. הדגש החשוב ביותר הוא לשמור על <span class="text-white font-bold underline decoration-red-500 underline-offset-4">טכניקה נכונה</span> לאורך כל התנועה!</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Exercises List -->
-                <div class="space-y-4">
-                    <h3 class="font-bold text-slate-200 flex items-center gap-2 mb-4 px-1">
-                        <i data-lucide="list-checks" class="w-5 h-5 text-indigo-400"></i>
-                        רשימת התרגילים
-                    </h3>
-
-                    ${createExerciseCard(1, 'סקוואט חופשי / סמית', 'רגליים ברוחב כתפיים, גב ישר, ירידה מבוקרת', '3', '6-10')}
-                    ${createExerciseCard(2, 'דדליפט רומני (RDL)', 'דגש על מתיחה בהמסטרינגס, גב ישר ותנועה מהאגן', '3', '8-10')}
-                    ${createExerciseCard(3, 'היפ טראסט (Hip Thrust)', 'דגש על כיווץ ישבן בשיא התנועה', '3', '8-12')}
-                    ${createExerciseCard(4, 'לחיצת כתפיים מוט', '', '3', '5-10')}
-                    ${createExerciseCard(5, 'מתח (גרביטון או גומיות)', '', '3', '5-10')}
-                </div>
-            </div>`;
-        }
-
-        function renderNutrition() {
-            return `
-            <div class="space-y-6 fade-in-zoom pb-6">
-                
-                <div class="bg-emerald-600 rounded-2xl p-5 shadow-lg shadow-emerald-900/20 relative overflow-hidden mb-4">
-                    <div class="relative z-10">
-                        <span class="text-emerald-200 text-xs font-bold tracking-wider uppercase">תזונה מותאמת אישית</span>
-                        <h2 class="text-2xl font-bold text-white mt-1">התפריט של מירב</h2>
-                        <p class="text-emerald-100 text-xs mt-2 leading-relaxed bg-emerald-700/30 p-2 rounded-lg border border-emerald-500/30">
-                            מטרה: חיטוב וירידה באחוזי שומן. התפריט מותאם ללא עוף ובשר, בנוי ל-2-3 ארוחות ביום, ומשלב את כל אבות המזון החשובים לתהליך שלך.
-                        </p>
-                    </div>
-                    <i data-lucide="utensils" class="absolute -bottom-4 -left-4 text-white/10 w-32 h-32 transform rotate-12"></i>
-                </div>
-
-                <!-- סיכום יומי -->
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center justify-center gap-2">
-                        <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
-                        יעדים יומיים לחיטוב
-                    </h3>
-                    <div class="grid grid-cols-4 gap-2 text-center">
-                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-700/50">
-                            <span class="block text-[10px] text-slate-400">קלוריות</span>
-                            <span class="block text-sm font-bold text-slate-100">~1480</span>
-                        </div>
-                        <div class="bg-red-500/10 p-2 rounded-lg border border-red-500/20">
-                            <span class="block text-[10px] text-red-400">חלבון</span>
-                            <span class="block text-sm font-bold text-red-100">~120g</span>
-                        </div>
-                        <div class="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
-                            <span class="block text-[10px] text-emerald-400">פחמימה</span>
-                            <span class="block text-sm font-bold text-emerald-100">~130g</span>
-                        </div>
-                        <div class="bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
-                            <span class="block text-[10px] text-amber-400">שומן</span>
-                            <span class="block text-sm font-bold text-amber-100">~50g</span>
-                        </div>
-                    </div>
-                    <p class="text-[10px] text-slate-500 mt-2 text-center">* הסך היומי כולל מרווח ביטחון לקפה, חלב, ומעט שמן לבישול.</p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center">
-                        <i data-lucide="droplets" class="w-6 h-6 text-blue-400 mb-1"></i>
-                        <span class="text-xs text-slate-400">מים ביום</span>
-                        <span class="text-sm font-bold text-slate-200">לפחות 2 ליטר</span>
-                    </div>
-                    <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 flex flex-col items-center justify-center text-center">
-                        <i data-lucide="pill" class="w-6 h-6 text-purple-400 mb-1"></i>
-                        <span class="text-xs text-slate-400">תוספים</span>
-                        <span class="text-sm font-bold text-slate-200">ברזל, מגנזיום</span>
-                    </div>
-                </div>
-
-                <!-- מקרא צבעים -->
-                <div class="flex justify-center flex-wrap gap-4 text-xs font-bold bg-slate-900 py-3 px-2 rounded-xl border border-slate-800">
-                    <span class="flex items-center gap-1.5 text-red-400"><div class="w-2.5 h-2.5 rounded-full bg-red-500"></div> חלבון</span>
-                    <span class="flex items-center gap-1.5 text-emerald-400"><div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> פחמימה</span>
-                    <span class="flex items-center gap-1.5 text-amber-400"><div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div> שומן</span>
-                    <span class="flex items-center gap-1.5 text-lime-400"><div class="w-2.5 h-2.5 rounded-full bg-lime-500"></div> ירקות</span>
-                </div>
-
-                <!-- ארוחה 1 -->
-                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                    <div class="bg-slate-900/50 p-3 border-b border-slate-700 flex items-start gap-3">
-                        <i data-lucide="sunrise" class="w-5 h-5 text-orange-400 mt-1 flex-shrink-0"></i>
-                        <div class="w-full">
-                            <h3 class="font-bold text-slate-200">ארוחה 1: בוקר מאוחרת</h3>
-                            <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px] font-mono font-medium">
-                                <span class="bg-slate-800 border border-slate-600 text-slate-300 px-1.5 py-0.5 rounded">~450 kcal</span>
-                                <span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded">32g חלבון</span>
-                                <span class="bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">42g פחמימה</span>
-                                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">15g שומן</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-4 space-y-4 text-sm">
-                        <div>
-                            <span class="block text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">חלבון - לבחור אופציה אחת:</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>ביצים (3 יחידות)</li>
-                                <li>יוגורט פרו (גביע וחצי - 300 גרם) <span class="text-xs text-purple-300 ml-1">*מומלץ להוסיף חופן קטן של אוכמניות טריות</span></li>
-                                <li>קוטג' (קופסה שלמה - 250 גרם)</li>
-                                <li>גבינה צהובה 9%/16% (3 פרוסות - 75 גרם)</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <span class="block text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">פחמימה - לבחור אופציה אחת:</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>שיבולת שועל / קוואקר (4 כפות - כ-40 גרם)</li>
-                                <li>לחם כוסמין (2 פרוסות - 60 גרם)</li>
-                                <li>לחם קל (3 פרוסות - 75 גרם)</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <span class="block text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">שומן - לבחור אופציה אחת:</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>אבוקדו (30 גרם)</li>
-                                <li>טחינה גולמית (1 כף - 15 גרם)</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <span class="block text-lime-400 bg-lime-500/10 border border-lime-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">ירקות:</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>סלט ירקות (כ-300 גרם)</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ארוחה 2 -->
-                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                    <div class="bg-slate-900/50 p-3 border-b border-slate-700 flex items-start gap-3">
-                        <i data-lucide="sun" class="w-5 h-5 text-yellow-400 mt-1 flex-shrink-0"></i>
-                        <div class="w-full">
-                            <h3 class="font-bold text-slate-200">ארוחה 2: צהריים / אחרי אימון</h3>
-                            <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px] font-mono font-medium">
-                                <span class="bg-slate-800 border border-slate-600 text-slate-300 px-1.5 py-0.5 rounded">~630 kcal</span>
-                                <span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded">54g חלבון</span>
-                                <span class="bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">59g פחמימה</span>
-                                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">20g שומן</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-4 space-y-4 text-sm">
-                        <div>
-                            <span class="block text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">חלבון - לבחור אופציה אחת:</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>פילה סלמון בתנור (200 גרם)</li>
-                                <li>דניס / לברק (250 גרם)</li>
-                                <li>טונה (קופסה וחצי - 165 גרם)</li>
-                                <li>אבקת חלבון (מנה וחצי - 45 גרם) - מעולה אחרי אימון</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <span class="block text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">פחמימה - לבחור אופציה אחת:</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>אורז / קינואה / כוסמת (כוס מבושלת - 150 גרם)</li>
-                                <li>תפוח אדמה / בטטה (יחידה בינונית - 150 גרם)</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <span class="block text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">שומן (אופציונלי):</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>טחינה גולמית (1 כף - 15 גרם)</li>
-                                <li class="text-slate-400 text-xs mt-1">* אם אוכלים סלמון, אין חובה להוסיף מנת שומן נוספת כיוון שהדג שומני.</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <span class="block text-lime-400 bg-lime-500/10 border border-lime-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">ירקות:</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>סלט ירקות או ברוקולי (כ-300 גרם)</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ארוחה 3 -->
-                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                    <div class="bg-slate-900/50 p-3 border-b border-slate-700 flex items-start gap-3">
-                        <i data-lucide="moon" class="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0"></i>
-                        <div class="w-full">
-                            <h3 class="font-bold text-slate-200">ארוחה 3: ערב (או ארוחת השלמה)</h3>
-                            <div class="flex flex-wrap gap-1.5 mt-1.5 text-[10px] font-mono font-medium">
-                                <span class="bg-slate-800 border border-slate-600 text-slate-300 px-1.5 py-0.5 rounded">~270 kcal</span>
-                                <span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded">30g חלבון</span>
-                                <span class="bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">15g פחמימה</span>
-                                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">10g שומן</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-4 space-y-4 text-sm">
-                        <p class="text-slate-400 text-xs mb-3">ארוחה קלה להשלמת הערכים, במיוחד בימים של אימון.</p>
-                        <div>
-                            <span class="block text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">חלבון - לבחור אופציה אחת:</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>טונה (1 קופסה - 110 גרם) + ביצה קשה 1</li>
-                                <li>ביצים (3 יחידות) - במידה ולא נאכלו בבוקר</li>
-                                <li>יוגורט פרו (גביע וחצי - 300 גרם)</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <span class="block text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1 mb-2 font-bold w-fit">פחמימה - לבחור אופציה אחת:</span>
-                            <ul class="list-disc list-inside text-slate-300 mr-2 space-y-1.5">
-                                <li>לחם קל (2 פרוסות - 50 גרם)</li>
-                                <li>לחם כוסמין (1 פרוסה - 30 גרם)</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- דגשים חשובים -->
-                <div class="bg-slate-800/80 rounded-xl border border-blue-500/30 p-4 mt-6">
-                    <h3 class="font-bold text-slate-200 mb-4 flex items-center gap-2">
-                        <i data-lucide="info" class="w-5 h-5 text-blue-400"></i>
-                        דגשים חשובים לתהליך
-                    </h3>
-                    <ul class="space-y-3 text-sm text-slate-300">
-                        <li class="flex items-start gap-2.5">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0"></i>
-                            <span><strong>שמן ובישול:</strong> התפריט לא כולל שמן לטיגון. השתדלי להשתמש בתרסיס שמן או למדוד בכפית (כפית שמן = כ-45 קלוריות שקל לפספס).</span>
-                        </li>
-                        <li class="flex items-start gap-2.5">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0"></i>
-                            <span><strong>תוספי תזונה:</strong> את הברזל חשוב לקחת רחוק ממוצרי חלב וקפה (שמפריעים לספיגה), ואת המגנזיום כדאי לקחת בערב לפני השינה או אחרי אימון להרפיית שרירים.</span>
-                        </li>
-                        <li class="flex items-start gap-2.5">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0"></i>
-                            <span><strong>תזמון ארוחות:</strong> אין חובה לאכול בשעות מדויקות, אבל ביום של אימון השתדלי שארוחה 2 (הגדולה) תהיה הארוחה שאחרי האימון להתאוששות טובה.</span>
-                        </li>
-                        <li class="flex items-start gap-2.5">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0"></i>
-                            <span><strong>ירקות:</strong> שילבנו ירקות בבוקר ובצהריים. הם המפתח לשובע בחיטוב בזכות הסיבים התזונתיים! אפשר ומומלץ לגוון בסוגי הירקות.</span>
-                        </li>
-                        <li class="flex items-start gap-2.5">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0"></i>
-                            <span><strong>התמדה וגמישות:</strong> חיטוב הוא מרתון, לא ספרינט. חרגת קצת בארוחה? הכל בסדר! לא מקזזים, פשוט ממשיכים כרגיל בארוחה הבאה. 80% דיוק יביא 100% תוצאות.</span>
-                        </li>
-                    </ul>
-                </div>
-
-            </div>`;
+            // כאן אפשר להוסיף לוגיקה שמציגה את האימון האחרון שנמשך מה-liveWorkouts
+            return `<div class="p-4 text-center">תוכנית אימונים פעילה...</div>`;
         }
 
         function renderProgress() {
             return `
-            <div class="space-y-8 fade-in-zoom">
-                
-                <div class="bg-blue-600 rounded-2xl p-5 shadow-lg shadow-blue-900/20 relative overflow-hidden mb-6">
-                    <div class="relative z-10">
-                        <span class="text-blue-200 text-xs font-bold tracking-wider uppercase">אימון אישי</span>
-                        <h2 class="text-2xl font-bold text-white mt-1">התקדמות ושיאים</h2>
-                        <p class="text-blue-100 text-xs mt-2 leading-relaxed bg-blue-700/30 p-2 rounded-lg border border-blue-500/30">
-                            כאן תוכלי לעקוב אחרי השיאים שלך בכל תרגיל מהאימונים המשותפים שלנו.
-                        </p>
+            <div class="p-4 space-y-4">
+                <h2 class="text-xl font-bold">אימונים אחרונים מהענן</h2>
+                ${liveWorkouts.length > 0 ? liveWorkouts.slice(-5).reverse().map(w => `
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                        <div class="font-bold text-blue-400">${w.exercise}</div>
+                        <div class="text-sm">משקל: ${w.totalWeight} ק"ג | חזרות: ${w.reps}</div>
                     </div>
-                    <i data-lucide="trending-up" class="absolute -bottom-4 -left-4 text-white/10 w-32 h-32 transform rotate-12"></i>
-                </div>
-
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2">
-                        <i data-lucide="trophy" class="w-5 h-5 text-yellow-400"></i>
-                        שיפור משקלי עבודה (ק"ג)
-                    </h3>
-                    <div class="h-[500px] w-full flex items-center justify-center">
-                        ${progressData.strength.length > 0 ? `
-                            <canvas id="strengthChart"></canvas>
-                        ` : `
-                            <p class="text-slate-500 text-sm">הזן נתונים כדי לראות התקדמות</p>
-                        `}
-                    </div>
-                </div>
-                
-                <!-- SECTION START: פירוט לפי תרגיל -->
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <h3 class="text-lg font-bold text-slate-200 mb-3 flex items-center gap-2">
-                        <i data-lucide="search" class="w-5 h-5 text-blue-400"></i>
-                        פירוט לפי תרגיל
-                    </h3>
-                    
-                    <select id="exerciseSelect" onchange="updateExerciseDetails(this.value)" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-3 mb-2 focus:outline-none focus:border-blue-500 cursor-pointer">
-                        ${progressData.strength.map(d => `<option value="${d.exercise}" ${d.exercise === selectedProgressExercise ? 'selected' : ''}>${d.exercise}</option>`).join('')}
-                    </select>
-                    
-                    <div id="exerciseDetailsContent">
-                        <!-- Content injected via JS -->
-                    </div>
-                </div>
-                <!-- SECTION END -->
-
-                <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-xl border border-slate-700">
-                    <h4 class="text-slate-300 font-medium mb-2">סיכום התמדה</h4>
-                    <div class="flex justify-between items-end">
-                        <div>
-                            <div class="text-3xl font-bold text-white">${clientProfile.workoutsCompleted}</div>
-                            <div class="text-xs text-slate-500">אימונים אישיים הושלמו</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-3xl font-bold text-slate-500">🔥</div>
-                            <div class="text-xs text-slate-500">עבודה אלופה!</div>
-                        </div>
-                    </div>
-                </div>
+                `).join('') : '<p>אין עדיין נתונים מהאימון האחרון.</p>'}
             </div>`;
         }
 
-        function renderVideos() {
-            return `
-            <div class="space-y-6 fade-in-zoom">
-                <div class="bg-orange-600 rounded-2xl p-5 shadow-lg shadow-orange-900/20 relative overflow-hidden">
-                    <div class="relative z-10">
-                        <span class="text-orange-200 text-xs font-bold tracking-wider uppercase">ספריית VOD</span>
-                        <h2 class="text-2xl font-bold text-white mt-1">הדרכות טכניקה</h2>
-                        <p class="text-orange-100 text-sm mt-2 opacity-90">דגשים לביצוע נכון ומניעת פציעות</p>
-                    </div>
-                    <i data-lucide="play-circle" class="absolute -bottom-4 -left-4 text-white/10 w-32 h-32 transform rotate-12"></i>
-                </div>
-
-                <div class="space-y-3">
-                    ${videosData.length > 0 ? videosData.map(video => `
-                        <a href="${video.url}" target="_blank" rel="noopener noreferrer" class="block bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-orange-500/50 transition-colors group">
-                            <div class="flex justify-between items-start">
-                                <div class="flex gap-4">
-                                    <div class="bg-slate-900 h-12 w-12 rounded-lg flex items-center justify-center group-hover:bg-orange-500/10 transition-colors">
-                                        <i data-lucide="play-circle" class="w-6 h-6 text-orange-500"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-slate-100 group-hover:text-orange-400 transition-colors">${video.title}</h4>
-                                        <span class="text-xs text-slate-500 bg-slate-900 px-2 py-0.5 rounded-full mt-1 inline-block">
-                                            ${video.category}
-                                        </span>
-                                    </div>
-                                </div>
-                                <i data-lucide="external-link" class="w-4 h-4 text-slate-500 group-hover:text-orange-400"></i>
-                            </div>
-                        </a>
-                    `).join('') : `
-                        <div class="text-center py-10">
-                            <p class="text-slate-500">אין סרטונים זמינים כרגע</p>
-                        </div>
-                    `}
-                </div>
-            </div>`;
-        }
-
-        // --- אתחול הגרפים ---
-        function initCharts() {
-            // השמדת גרפים ישנים אם קיימים
-            chartsInstance.forEach(chart => chart.destroy());
-            chartsInstance = [];
-
-            Chart.defaults.color = '#94a3b8';
-            Chart.defaults.font.family = 'Assistant, sans-serif';
-
-            if (progressData.strength.length > 0) {
-                const ctxStrength = document.getElementById('strengthChart').getContext('2d');
-                
-                // יצירת צבעים מותאמים לגרביטון (כדי להראות שמשקל נמוך יותר זה טוב)
-                const bgColorsPrev = progressData.strength.map(d => d.exercise.includes('גרביטון') ? '#64748b' : '#475569');
-                const bgColorsCurrent = progressData.strength.map(d => d.exercise.includes('גרביטון') ? '#10b981' : '#3b82f6'); // ירוק לגרביטון, כחול לרגיל
-
-                const strengthChart = new Chart(ctxStrength, {
-                    type: 'bar',
-                    data: {
-                        labels: progressData.strength.map(d => d.exercise),
-                        datasets: [
-                            {
-                                label: 'משקל התחלה',
-                                data: progressData.strength.map(d => d.prev),
-                                backgroundColor: bgColorsPrev,
-                                borderRadius: 4
-                            },
-                            {
-                                label: 'שיא נוכחי',
-                                data: progressData.strength.map(d => d.current),
-                                backgroundColor: bgColorsCurrent,
-                                borderRadius: 4
-                            }
-                        ]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'top', labels: { color: '#e2e8f0' } },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) { label += ': '; }
-                                        
-                                        const exerciseName = context.chart.data.labels[context.dataIndex];
-                                        
-                                        if (context.parsed.x !== null) {
-                                            if (exerciseName.includes('גרביטון') && context.parsed.x > 0) {
-                                                label += '-' + context.parsed.x + ' ק"ג'; // סימן מינוס לגרביטון
-                                            } else {
-                                                label += context.parsed.x === 0 ? 'משקל גוף/גומיה' : context.parsed.x + ' ק"ג';
-                                            }
-                                        }
-                                        return label;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: { grid: { color: '#334155', drawBorder: false } },
-                            y: { grid: { display: false, drawBorder: false } }
-                        }
-                    }
-                });
-                chartsInstance.push(strengthChart);
-            }
-        }
-
-        // --- הרינדור הראשי ---
         function render() {
             const root = document.getElementById('app-root');
-            
-            let mainContent = '';
-            if (activeTab === 'workouts') mainContent = renderWorkouts();
-            else if (activeTab === 'nutrition') mainContent = renderNutrition();
-            else if (activeTab === 'progress') mainContent = renderProgress();
-            else if (activeTab === 'videos') mainContent = renderVideos();
-
             root.innerHTML = `
                 ${renderHeader()}
-                <main class="max-w-md mx-auto p-4 pb-24">
-                    ${mainContent}
+                <main class="max-w-md mx-auto">
+                    ${activeTab === 'workouts' ? renderWorkouts() : renderProgress()}
                 </main>
             `;
-
-            // אתחול האייקונים של Lucide
             lucide.createIcons();
-
-            // אם עברנו לטאב הגרפים, נצייר אותם ונעדכן את פרטי התרגיל
-            if (activeTab === 'progress') {
-                initCharts();
-                updateExerciseDetails(selectedProgressExercise);
-            }
         }
 
-        // --- הפעלה ראשונית של האפליקציה ---
-        window.onload = () => {
-            render();
-        };
-
+        // טעינת הנתונים בהתחלה
+        fetchWorkouts();
     </script>
 </body>
 </html>
